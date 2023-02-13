@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { authApi } from '../api';
@@ -17,15 +17,15 @@ export default function TodoList() {
   const navigate = useNavigate();
 
   const [add, setAdd] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
   const [editToggle, setEditToggle] = useState(false);
 
   const [todoList, setTodoList] = useState([]);
   const [newTodoContent, setNewTodoContent] = useState('');
-  
+
   useEffect(() => {
     getTodos();
-
+    console.log(todoList)
     return () => {
       const token = localStorage.getItem('user');
       if (!token) {
@@ -37,8 +37,7 @@ export default function TodoList() {
   const getTodos = async () => {
     try {
       const response = await authApi.get('/todos');
-      let copy = [...todoList, ...response.data];
-      setTodoList(copy);
+      setTodoList(response.data);
     } catch (err) {
       console.log('todo get err', err);
     }
@@ -47,8 +46,10 @@ export default function TodoList() {
   const createTodo = async () => {
     try {
       const response = await authApi.post('/todos', {
-        todo : newTodoContent
+        todo: newTodoContent
       });
+      let copy = [...todoList, response.data];
+      setTodoList(copy)
       console.log(response);
     } catch (err) {
       console.log('todo create err', err);
@@ -57,50 +58,62 @@ export default function TodoList() {
 
   const changeCheck = (e) => {
     if (e.target.checked) {
-      setChecked(true);
+      setIsChecked(true);
     } else {
-      setChecked(false);
+      setIsChecked(false);
     }
   };
 
-  const changeEditToggle = () => {
-    if (!editToggle) {
-      setEditToggle(true);
-    } else {
-      setEditToggle(false);
+  const onEditToggle = useCallback(id => {
+    setTodoList(todoList.map(todo =>
+      todo.id === id ? { ...todoList, checked: true } : todo
+    ))
+  })
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
     }
-  };
+  }
+
+  const onTodoChange = (e) => {
+    e.preventDefault();
+    setNewTodoContent(e.target.value)
+  }
 
   return (
     <Container>
       <TodoBox>
         <h1>TODO LIST</h1>
         <InputBox>
-          <TodoInput data-testid="new-todo-input" type="text" onChange={(e) => {setNewTodoContent(e.target.value)}}></TodoInput>
-          <RiAddCircleLine
+          <TodoInput data-testid="new-todo-input" type="text" onChange={onTodoChange}></TodoInput>
+          <button
             data-testid="new-todo-add-button"
             onClick={createTodo}
-            className="icon"
-          />
+          >
+            <RiAddCircleLine
+              className="icon"
+            />
+          </button>
         </InputBox>
         <ListBox>
-          {todoList.length != 0 ? todoList.map((todo, i ) => {
-            console.log(todo)
-            return(
+          {todoList.length != 0 ? todoList.map((todo, i) => {
+            return (
               <ListItem key={i}>
                 {editToggle == true ? (
                   <>
                     <TodoInput type="text" data-testid="modify-input" value={todo.todo}></TodoInput>
                     <ListBtnWrap>
-                      <RiPencilFill
-                        data-testid="submit-button"
-                        className="icon"
-                        onClick={changeEditToggle}
-                      />
-                      <RiCloseFill
-                        data-testid="cancel-button"
-                        className="icon"
-                      ></RiCloseFill>
+                      <button data-testid="submit-button">
+                        <RiPencilFill
+                          className="icon"
+                          onClick={changeEditToggle}
+                        />
+                      </button>
+                      <button data-testid="cancel-button">
+                        <RiCloseFill
+                          className="icon"
+                        ></RiCloseFill>
+                      </button>
                     </ListBtnWrap>
                   </>
                 ) : (
@@ -111,19 +124,20 @@ export default function TodoList() {
                       onChange={changeCheck}
                       checkTrue={checkTrue}
                       checkFalse={checkFalse}
-                      checked={checked}
+                      checked={todo.isCompleted}
                     ></CheckBox>
                     <label htmlFor="todoitem">{todo.todo}</label>
                     <ListBtnWrap>
-                      <RiPencilFill
-                        data-testid="modify-button"
-                        className="icon"
-                        onClick={changeEditToggle}
-                      />
-                      <RiDeleteBinFill
-                        data-testid="delete-button"
-                        className="icon"
-                      />
+                      <button data-testid="modify-button" onClick={onEditToggle}>
+                        <RiPencilFill
+                          className="icon"
+                        />
+                      </button>
+                      <button data-testid="delete-button">
+                        <RiDeleteBinFill
+                          className="icon"
+                        />
+                      </button>
                     </ListBtnWrap>
                   </>
                 )}
@@ -154,9 +168,14 @@ const TodoBox = styled.div`
 
   & .icon {
     font-size: 23px;
-    margin-left: 10px;
     cursor: pointer;
     color: ${(props) => props.theme.colors.BLUE_300};
+  }
+
+  & button {
+    padding: 0;
+    background: none;
+    margin-left: 10px;
   }
 `;
 
@@ -212,7 +231,7 @@ const CheckBox = styled.input`
     padding-left: 30px;
     cursor: pointer;
     color: ${(props) =>
-      props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300};
+    props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300};
     text-align: left;
     text-decoration: ${(props) => (props.checked ? 'line-through' : 'none')};
   }
