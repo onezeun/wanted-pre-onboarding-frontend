@@ -1,15 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-import { RiAddCircleLine, RiPencilFill, RiDeleteBinFill } from "react-icons/ri";
+import { authApi } from '../api';
+import {
+  RiAddCircleLine,
+  RiPencilFill,
+  RiDeleteBinFill,
+  RiCloseFill,
+} from 'react-icons/ri';
 import { Container } from '../components/Container';
 import styled from 'styled-components/macro';
 import checkTrue from '../assets/checkTrue.png';
 import checkFalse from '../assets/checkFalse.png';
 
 export default function TodoList() {
+  const navigate = useNavigate();
+
+  const [add, setAdd] = useState(false);
   const [checked, setChecked] = useState(false);
-  const [edit, setEdit] = useState(false);
+  const [editToggle, setEditToggle] = useState(false);
+
+  const [todoList, setTodoList] = useState([]);
+  const [newTodoContent, setNewTodoContent] = useState('');
+  
+  useEffect(() => {
+    getTodos();
+
+    return () => {
+      const token = localStorage.getItem('user');
+      if (!token) {
+        navigate('/signin');
+      }
+    };
+  }, []);
+
+  const getTodos = async () => {
+    try {
+      const response = await authApi.get('/todos');
+      let copy = [...todoList, ...response.data];
+      setTodoList(copy);
+    } catch (err) {
+      console.log('todo get err', err);
+    }
+  };
+
+  const createTodo = async () => {
+    try {
+      const response = await authApi.post('/todos', {
+        todo : newTodoContent
+      });
+      console.log(response);
+    } catch (err) {
+      console.log('todo create err', err);
+    }
+  };
 
   const changeCheck = (e) => {
     if (e.target.checked) {
@@ -17,52 +61,87 @@ export default function TodoList() {
     } else {
       setChecked(false);
     }
-  }
+  };
 
-  const changeEdit = (e) => {
-    if (!edit) {
-      setEdit(true);
+  const changeEditToggle = () => {
+    if (!editToggle) {
+      setEditToggle(true);
     } else {
-      setEdit(false);
+      setEditToggle(false);
     }
-  }
+  };
 
   return (
     <Container>
       <TodoBox>
         <h1>TODO LIST</h1>
         <InputBox>
-          <TodoInput type='text'></TodoInput>
-          <RiAddCircleLine className='icon' />
+          <TodoInput data-testid="new-todo-input" type="text" onChange={(e) => {setNewTodoContent(e.target.value)}}></TodoInput>
+          <RiAddCircleLine
+            data-testid="new-todo-add-button"
+            onClick={createTodo}
+            className="icon"
+          />
         </InputBox>
         <ListBox>
-          {edit == true ? (
-            <>
-              <TodoInput type='text'></TodoInput>
-              <ListBtnWrap>
-                <RiPencilFill className='icon' onClick={changeEdit} />
-              </ListBtnWrap>
-            </>
-          ) : (
-            <>
-              <CheckBox type='checkbox' id="todoitem" onChange={changeCheck} checkTrue={checkTrue} checkFalse={checkFalse} checked={checked}></CheckBox>
-              <label htmlFor="todoitem" >투두리스트만들기</label>
-              <ListBtnWrap>
-                <RiPencilFill className='icon' onClick={changeEdit} />
-                <RiDeleteBinFill className='icon' />
-              </ListBtnWrap>
-            </>
+          {todoList.length != 0 ? todoList.map((todo, i ) => {
+            console.log(todo)
+            return(
+              <ListItem key={i}>
+                {editToggle == true ? (
+                  <>
+                    <TodoInput type="text" data-testid="modify-input" value={todo.todo}></TodoInput>
+                    <ListBtnWrap>
+                      <RiPencilFill
+                        data-testid="submit-button"
+                        className="icon"
+                        onClick={changeEditToggle}
+                      />
+                      <RiCloseFill
+                        data-testid="cancel-button"
+                        className="icon"
+                      ></RiCloseFill>
+                    </ListBtnWrap>
+                  </>
+                ) : (
+                  <>
+                    <CheckBox
+                      type="checkbox"
+                      id="todoitem"
+                      onChange={changeCheck}
+                      checkTrue={checkTrue}
+                      checkFalse={checkFalse}
+                      checked={checked}
+                    ></CheckBox>
+                    <label htmlFor="todoitem">{todo.todo}</label>
+                    <ListBtnWrap>
+                      <RiPencilFill
+                        data-testid="modify-button"
+                        className="icon"
+                        onClick={changeEditToggle}
+                      />
+                      <RiDeleteBinFill
+                        data-testid="delete-button"
+                        className="icon"
+                      />
+                    </ListBtnWrap>
+                  </>
+                )}
+              </ListItem>
+            )
+          }) : (
+            <p>등록된 할일이 없습니다.</p>
           )}
         </ListBox>
       </TodoBox>
-    </Container >
-  )
+    </Container>
+  );
 }
 
 const TodoBox = styled.div`
   margin: auto;
   text-align: center;
-  max-width: 400px; 
+  max-width: 400px;
   border-radius: 5px;
   background: ${(props) => props.theme.colors.WHITE_100};
   padding: 10px 50px 30px;
@@ -86,22 +165,34 @@ const InputBox = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+
+  & .icon {
+    font-size: 30px;
+  }
 `;
 
 const TodoInput = styled.input`
   width: 100%;
   border: none;
-  border-bottom:1px solid ${(props) => props.theme.colors.BLUE_100};
+  border-bottom: 1px solid ${(props) => props.theme.colors.BLUE_100};
   background: none;
   transition: 0.3s ease;
   &:focus {
-      border-bottom:2px solid ${(props) => props.theme.colors.BLUE_200};
+    border-bottom: 2px solid ${(props) => props.theme.colors.BLUE_200};
   }
 `;
 
-const ListBox = styled.div`
+const ListBox = styled.ul`
+  padding: 0;
+`;
+
+const ListItem = styled.li`
   display: flex;
   justify-content: space-between;
+
+  ${TodoInput} {
+    width: 78%;
+  }
 `;
 
 const CheckBox = styled.input`
@@ -114,19 +205,19 @@ const CheckBox = styled.input`
   clip: rect(0, 0, 0, 0);
   border: 0;
 
-  &+label {
+  & + label {
     display: inline-block;
     width: 78%;
     position: relative;
     padding-left: 30px;
     cursor: pointer;
-    color: ${(props) => (props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300)};
-    text-align:left;
+    color: ${(props) =>
+      props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300};
+    text-align: left;
     text-decoration: ${(props) => (props.checked ? 'line-through' : 'none')};
+  }
 
-  };
-
-  &+label:before {
+  & + label:before {
     content: '';
     position: absolute;
     left: 0;
@@ -138,7 +229,7 @@ const CheckBox = styled.input`
     box-sizing: border-box;
   }
 
-  &:checked+label:after {
+  &:checked + label:after {
     content: '';
     position: absolute;
     left: 0;
@@ -149,5 +240,4 @@ const CheckBox = styled.input`
   }
 `;
 
-const ListBtnWrap = styled.div`
-`;
+const ListBtnWrap = styled.div``;
