@@ -20,24 +20,25 @@ export default function TodoList() {
   const [isChecked, setIsChecked] = useState(false);
   const [editToggle, setEditToggle] = useState(false);
 
-  const [todoList, setTodoList] = useState([]);
+  const [todoList, setTodoList] = useState(null);
   const [newTodoContent, setNewTodoContent] = useState('');
 
   useEffect(() => {
-    getTodos();
-    console.log(todoList)
-    return () => {
-      const token = localStorage.getItem('user');
-      if (!token) {
-        navigate('/signin');
-      }
+    if(todoList == null) {
+      getTodos();
     };
-  }, []);
+
+    const token = localStorage.getItem('user');
+    if (!token) {
+      navigate('/signin');
+    };
+  }, [todoList]);
 
   const getTodos = async () => {
     try {
       const response = await authApi.get('/todos');
       setTodoList(response.data);
+      console.log(response.data);
     } catch (err) {
       console.log('todo get err', err);
     }
@@ -45,14 +46,26 @@ export default function TodoList() {
 
   const createTodo = async () => {
     try {
-      const response = await authApi.post('/todos', {
-        todo: newTodoContent
-      });
-      let copy = [...todoList, response.data];
-      setTodoList(copy)
-      console.log(response);
+      if (newTodoContent != '') {
+        const response = await authApi.post('/todos', {
+          todo: newTodoContent,
+        });
+        let copy = [...todoList, response.data];
+        setTodoList(copy);
+      }
+      return false;
     } catch (err) {
       console.log('todo create err', err);
+    }
+  };
+
+  const deleteTodo = async (id) => {
+    try {
+      const response = await authApi.delete(`/todos/${id}`);
+      getTodos();
+      console.log(response);
+    } catch (err) {
+      console.log('todo delete err', err);
     }
   };
 
@@ -64,86 +77,91 @@ export default function TodoList() {
     }
   };
 
-  const onEditToggle = useCallback(id => {
-    setTodoList(todoList.map(todo =>
-      todo.id === id ? { ...todoList, checked: true } : todo
-    ))
-  })
+  const onEditToggle = (id) => {
+    console.log(id);
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
+      createTodo();
     }
-  }
+  };
 
-  const onTodoChange = (e) => {
+  const onNewTodoChange = (e) => {
     e.preventDefault();
-    setNewTodoContent(e.target.value)
-  }
+    setNewTodoContent(e.target.value);
+  };
 
   return (
     <Container>
       <TodoBox>
         <h1>TODO LIST</h1>
         <InputBox>
-          <TodoInput data-testid="new-todo-input" type="text" onChange={onTodoChange}></TodoInput>
+          <TodoInput
+            data-testid="new-todo-input"
+            type="text"
+            onChange={onNewTodoChange}
+          ></TodoInput>
           <button
             data-testid="new-todo-add-button"
             onClick={createTodo}
+            onKeyDown={handleKeyPress}
           >
-            <RiAddCircleLine
-              className="icon"
-            />
+            <RiAddCircleLine className="icon" />
           </button>
         </InputBox>
         <ListBox>
-          {todoList.length != 0 ? todoList.map((todo, i) => {
-            return (
-              <ListItem key={i}>
-                {editToggle == true ? (
-                  <>
-                    <TodoInput type="text" data-testid="modify-input" value={todo.todo}></TodoInput>
-                    <ListBtnWrap>
-                      <button data-testid="submit-button">
-                        <RiPencilFill
-                          className="icon"
-                          onClick={changeEditToggle}
-                        />
-                      </button>
-                      <button data-testid="cancel-button">
-                        <RiCloseFill
-                          className="icon"
-                        ></RiCloseFill>
-                      </button>
-                    </ListBtnWrap>
-                  </>
-                ) : (
-                  <>
-                    <CheckBox
-                      type="checkbox"
-                      id="todoitem"
-                      onChange={changeCheck}
-                      checkTrue={checkTrue}
-                      checkFalse={checkFalse}
-                      checked={todo.isCompleted}
-                    ></CheckBox>
-                    <label htmlFor="todoitem">{todo.todo}</label>
-                    <ListBtnWrap>
-                      <button data-testid="modify-button" onClick={onEditToggle}>
-                        <RiPencilFill
-                          className="icon"
-                        />
-                      </button>
-                      <button data-testid="delete-button">
-                        <RiDeleteBinFill
-                          className="icon"
-                        />
-                      </button>
-                    </ListBtnWrap>
-                  </>
-                )}
-              </ListItem>
-            )
-          }) : (
+          {todoList != null && todoList.length != 0 ? (
+            todoList.map((todo, i) => {
+              return (
+                <ListItem key={i}>
+                    <>
+                      <TodoInput
+                        type="text"
+                        data-testid="modify-input"
+                        value={todo.todo}
+                      ></TodoInput>
+                      <ListBtnWrap>
+                        <button
+                          data-testid="submit-button"
+                          onClick={()=> onEditToggle(todo.id)}
+                        >
+                          <RiPencilFill className="icon" />
+                        </button>
+                        <button data-testid="cancel-button">
+                          <RiCloseFill className="icon"></RiCloseFill>
+                        </button>
+                      </ListBtnWrap>
+                    </>
+                    <div>
+                      <CheckBox
+                        type="checkbox"
+                        id="todoitem"
+                        onChange={changeCheck}
+                        checkTrue={checkTrue}
+                        checkFalse={checkFalse}
+                        checked={todo.isCompleted}
+                      ></CheckBox>
+                      <label htmlFor="todoitem">{todo.todo}</label>
+                      <ListBtnWrap>
+                        <button
+                          data-testid="modify-button"
+                          onClick={() => onEditToggle(todo.id)}
+                        >
+                          <RiPencilFill className="icon" />
+                        </button>
+                        <button
+                          data-testid="delete-button"
+                          onClick={() => deleteTodo(todo.id)}
+                        >
+                          <RiDeleteBinFill className="icon" />
+                        </button>
+                      </ListBtnWrap>
+                    </div>
+                </ListItem>
+              );
+            })
+          ) : (
             <p>등록된 할일이 없습니다.</p>
           )}
         </ListBox>
@@ -231,7 +249,7 @@ const CheckBox = styled.input`
     padding-left: 30px;
     cursor: pointer;
     color: ${(props) =>
-    props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300};
+      props.checked ? props.theme.colors.GREY : props.theme.colors.BLUE_300};
     text-align: left;
     text-decoration: ${(props) => (props.checked ? 'line-through' : 'none')};
   }

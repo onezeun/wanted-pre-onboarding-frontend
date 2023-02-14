@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { api } from '../api';
 import { Container } from '../components/Container';
-import * as S from './Auth.styles';
+import * as S from '../styles/Auth.styles';
 
 export default function SignUp() {
   const navigate = useNavigate();
