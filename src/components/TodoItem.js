@@ -11,8 +11,7 @@ import checkTrue from '../assets/checkTrue.png';
 import checkFalse from '../assets/checkFalse.png';
 
 export default function TodoItem({ todo, getTodos }) {
-  const [todoContent, setTodoContent] = useState(todo.todo)
-  const [isChecked, setIsChecked] = useState(false);
+  const [todoContent, setTodoContent] = useState(todo.todo);
   const [editToggle, setEditToggle] = useState(false);
 
   const onTodoChange = (e) => {
@@ -73,6 +72,11 @@ export default function TodoItem({ todo, getTodos }) {
     }
   }
 
+  const cancelEdit = () => {
+    setTodoContent('')
+    setEditToggle(false);
+  }
+
   return (
     <ListItem>
       {editToggle ? (
@@ -91,7 +95,10 @@ export default function TodoItem({ todo, getTodos }) {
             >
               <RiPencilFill className="icon" />
             </button>
-            <button data-testid="cancel-button">
+            <button
+              data-testid="cancel-button"
+              onClick={cancelEdit}
+            >
               <RiCloseFill className="icon"></RiCloseFill>
             </button>
           </ListBtnWrap>
@@ -106,7 +113,7 @@ export default function TodoItem({ todo, getTodos }) {
             checked={todo.isCompleted}
             readOnly
           ></CheckBox>
-            <label htmlFor="todoitem" onClick={() => updateIsCompleted(todo.id)} >{todo.todo}</label>
+          <label htmlFor="todoitem" onClick={() => updateIsCompleted(todo.id)} >{todo.todo}</label>
           <ListBtnWrap>
             <button
               data-testid="modify-button"
