@@ -29,7 +29,6 @@ export default function Todo() {
     try {
       const response = await authApi.get('/todos');
       setTodoList(response.data);
-      console.log(response.data);
     } catch (err) {
       console.log('todo get err', err);
     }
@@ -72,6 +71,7 @@ export default function Todo() {
               onChange={onNewTodoChange}
             ></TodoInput>
             <button
+              type='submit'
               data-testid="new-todo-add-button"
               onClick={createTodo}
               onKeyDown={handleKeyPress}

@@ -29,7 +29,7 @@ export default function TodoItem({ todo, getTodos }) {
         });
         setEditToggle(false);
         getTodos();
-      } 
+      }
     } catch (err) {
       console.log('todo update content err', err);
     }
@@ -65,7 +65,7 @@ export default function TodoItem({ todo, getTodos }) {
     }
   };
 
-  const changeEdit = (e) => {
+  const changeEdit = () => {
     if (!editToggle) {
       setEditToggle(true);
     } else {
@@ -85,6 +85,7 @@ export default function TodoItem({ todo, getTodos }) {
           ></TodoInput>
           <ListBtnWrap>
             <button
+              type='submit'
               data-testid="submit-button"
               onClick={() => updateTodo(todo.id)}
             >
@@ -100,12 +101,12 @@ export default function TodoItem({ todo, getTodos }) {
           <CheckBox
             type="checkbox"
             id="todoitem"
-            onChange={() => updateIsCompleted(todo.id)}
             checkTrue={checkTrue}
             checkFalse={checkFalse}
             checked={todo.isCompleted}
+            readOnly
           ></CheckBox>
-          <label htmlFor="todoitem">{todo.todo}</label>
+            <label htmlFor="todoitem" onClick={() => updateIsCompleted(todo.id)} >{todo.todo}</label>
           <ListBtnWrap>
             <button
               data-testid="modify-button"
