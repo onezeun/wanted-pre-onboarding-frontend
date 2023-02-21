@@ -14,7 +14,7 @@ export default function TodoItem({ todo, getTodos }) {
   const [todoContent, setTodoContent] = useState(todo.todo);
   const [editToggle, setEditToggle] = useState(false);
 
-  const onTodoChange = (e) => {
+  const onChangeTodo = (e) => {
     e.preventDefault();
     setTodoContent(e.target.value);
   };
@@ -85,7 +85,7 @@ export default function TodoItem({ todo, getTodos }) {
             type="text"
             data-testid="modify-input"
             defaultValue={todo.todo}
-            onChange={onTodoChange}
+            onChange={onChangeTodo}
           ></TodoInput>
           <ListBtnWrap>
             <button

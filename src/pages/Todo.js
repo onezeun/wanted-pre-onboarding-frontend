@@ -54,7 +54,7 @@ export default function Todo() {
     }
   };
 
-  const onNewTodoChange = (e) => {
+  const onChangeNewTodo = (e) => {
     e.preventDefault();
     setNewTodoContent(e.target.value);
   };
@@ -68,7 +68,7 @@ export default function Todo() {
             <TodoInput
               data-testid="new-todo-input"
               type="text"
-              onChange={onNewTodoChange}
+              onChange={onChangeNewTodo}
             ></TodoInput>
             <button
               type='submit'
